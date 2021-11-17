@@ -14,6 +14,7 @@ class Spot:
     self.y = col * width
     self.color = cl.WHITE
     self.neighbors = []
+    self.diagonal_neighbors = []
     self.width = width
     self.total_rows = total_rows
 
@@ -87,6 +88,35 @@ class Spot:
     
     if self.col > 0 and not grid[self.row][self.col - 1].is_barrier(): #check if neighbor to the left is a barrier
       self.neighbors.append(grid[self.row][self.col - 1])
+  
+  def update_diagonal_neighbors(self,grid) -> None:
+    self.diagonal_neighbors = []
+
+    if self.col < self.total_rows - 1 and self.row < self.total_rows - 1\
+    and not grid[self.row + 1][self.col].is_barrier()\
+    and not grid[self.row][self.col+1].is_barrier()\
+    and not grid[self.row+1][self.col+1].is_barrier(): #check if southeast node is a barrier
+        self.diagonal_neighbors.append(grid[self.row + 1][self.col+1])  
+
+    if self.col < self.total_rows - 1 and self.col > 0\
+    and not grid[self.row - 1][self.col].is_barrier()\
+    and not grid[self.row][self.col + 1].is_barrier()\
+    and not grid[self.row-1][self.col + 1].is_barrier(): #check if southwest node is a barrier
+        self.diagonal_neighbors.append(grid[self.row - 1][self.col+1])  
+    
+    if self.col > 0 and self.row < self.total_rows - 1\
+    and not grid[self.row + 1][self.col].is_barrier()\
+    and not grid[self.row][self.col - 1].is_barrier()\
+    and not grid[self.row+1][self.col - 1].is_barrier(): #check if northeast node is a barrier
+        self.diagonal_neighbors.append(grid[self.row + 1][self.col-1])  
+
+    if self.col > 0 and self.col > 0\
+    and not grid[self.row - 1][self.col].is_barrier()\
+    and not grid[self.row][self.col - 1].is_barrier()\
+    and not grid[self.row - 1][self.col - 1].is_barrier(): #check if northwest node is a barrier
+        self.diagonal_neighbors.append(grid[self.row - 1][self.col-1])  
+    
+
   
   def __lt__(self, other) -> bool:
     #handles comparing if one spot is less than another

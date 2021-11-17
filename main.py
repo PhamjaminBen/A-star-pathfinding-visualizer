@@ -7,11 +7,12 @@ import colors as cl
 from queue import PriorityQueue
 from spot import Spot
 
-def h(p1: tuple[float,float], p2: tuple[float,float]) -> float:
-  #Uses Manhattan distance to calculate distance between two points
+def h(p1: tuple[int,int], p2: tuple[int,int]) -> int:
+  #Uses Euclidian distance to calculate distance between two points
   x1, y1 = p1
   x2, y2 = p2
-  return abs(x1-x2) + abs(y1-y2)
+  t = (x1-x2)**2 + (y1-y2)**2
+  return int(10*math.sqrt(t))
 
 
 def reconstruct_path(came_from: Dict, current: Spot, draw: LambdaType) -> None:
@@ -57,9 +58,9 @@ def algorithm(draw: LambdaType, grid: list[list[Spot]], start: Spot, end: Spot) 
       end.make_end()
       start.make_start()
       return True
-    
-    for neighbor in current.neighbors: 
-      temp_g_score = g_score[current] + 1
+
+    for neighbor in current.diagonal_neighbors: 
+      temp_g_score = g_score[current] + 14
 
       #if the current path has a better path then its neighbors, update the neighbors path to be the optimized one
       if temp_g_score < g_score[neighbor]:
@@ -77,6 +78,27 @@ def algorithm(draw: LambdaType, grid: list[list[Spot]], start: Spot, end: Spot) 
 
       if current != start:
         current.make_closed() #can't be revisited
+    
+    for neighbor in current.neighbors: 
+      temp_g_score = g_score[current] + 10
+
+      #if the current path has a better path then its neighbors, update the neighbors path to be the optimized one
+      if temp_g_score < g_score[neighbor]:
+        came_from[neighbor] = current
+        g_score[neighbor] = temp_g_score
+        f_score[neighbor] = temp_g_score + h(neighbor.get_pos(), end.get_pos()) #update h score
+
+        if neighbor not in open_set_hash: #add neighbor to the queue with updated h score
+          count += 1
+          open_set.put((f_score[neighbor], count, neighbor))
+          open_set_hash.add(neighbor)
+          neighbor.make_open()
+    
+      draw()
+
+      if current != start:
+        current.make_closed() #can't be revisited
+    
 
 
 def make_grid(rows: int, width: int) -> list[list[Spot]]:
@@ -86,11 +108,20 @@ def make_grid(rows: int, width: int) -> list[list[Spot]]:
   grid = []
   gap = width // rows
 
-  for i in range(rows):
+  for i in range(rows): 
     grid.append([])
     for j in range(rows):
       spot = Spot(i, j, gap, rows)
       grid[i].append(spot)
+  
+  for rowIndex, row in enumerate(grid): #making outside a border
+    if rowIndex == 0 or rowIndex == len(grid)-1:
+      for spot in row:
+        spot.make_barrier()
+    else:
+      row[0].make_barrier()
+      row[-1].make_barrier()
+
   
   return grid
 
@@ -135,7 +166,7 @@ def main(win: Surface, width: int) -> None:
   '''
   The main function of the program, runs a loop that simulates the search algorithm and setup
   '''
-  ROWS = 20
+  ROWS = 30
   grid = make_grid(ROWS ,width)
 
   start = None
@@ -187,6 +218,7 @@ def main(win: Surface, width: int) -> None:
           for row in grid:
             for spot in row:
               spot.update_neighbors(grid)
+              spot.update_diagonal_neighbors(grid)
             
           algorithm(lambda: draw(win, grid, ROWS ,width),grid, start, end)
 
@@ -202,7 +234,7 @@ def main(win: Surface, width: int) -> None:
 
 
 if __name__ == "__main__":
-  WINDOW_WIDTH = 800
+  WINDOW_WIDTH = 900
   WINDOW = pygame.display.set_mode((WINDOW_WIDTH,WINDOW_WIDTH))
   pygame.display.set_caption("A* path finding algorithm")
   main(WINDOW,WINDOW_WIDTH)
